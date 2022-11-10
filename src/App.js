@@ -9,6 +9,7 @@ const TWITTER_HANDLE = "あなたのTwitterのハンドルネームを貼り付�
 const TWITTER_LINK = `https://twitter.com/${TWITTER_HANDLE}`;
 const OPENSEA_LINK = "";
 const TOTAL_MINT_COUNT = 50;
+const CONTRACT_ADDRESS = "0xB666C7785aC1C9182329BAB1DaC1778B6E475571";
 
 const App = () => {
   const [currentAccount, setCurrentAccount] = useState("");
@@ -29,6 +30,7 @@ const App = () => {
       const account = accounts[0];
       console.log("Found an authorized account:", account);
       setCurrentAccount(account);
+      setupEventListener();
     } else {
       console.log("No authorized account found");
     }
@@ -47,14 +49,40 @@ const App = () => {
       });
       console.log("connected", accounts[0]);
       setCurrentAccount(accounts[0]);
+      setupEventListener();
     } catch (error) {
       console.log(error);
     }
   };
 
-  const askContractToMintNFT = async () => {
-    const CONTRACT_ADDRESS = "0x86a5f886EE0F8e528e3Ec3737a97cDE4bd8E10Cd";
+  const setupEventListener = () => {
+    try {
+      const { ethereum } = window;
+      if (ethereum) {
+        const provider = new ethers.providers.Web3Provider(ethereum);
+        const signer = provider.getSigner();
 
+        const connectedContract = new ethers.Contract(
+          CONTRACT_ADDRESS,
+          myEpicNft.abi,
+          signer
+        );
+
+        connectedContract.on("NewEpicNFTMinted", (from, tokenId) => {
+          console.log(from, tokenId.toNumber());
+          alert(
+            `あなたのウォレットに NFT を送信しました。OpenSea に表示されるまで最大で10分かかることがあります。NFT へのリンクはこちらです: https://testnets.opensea.io/assets/${CONTRACT_ADDRESS}/${tokenId.toNumber()}`
+          );
+        });
+
+        console.log("Setup event listener!");
+      }
+    } catch (error) {
+      console.log("Ethereum object doesn't exist!");
+    }
+  };
+
+  const askContractToMintNFT = async () => {
     try {
       const { ethereum } = window;
       if (ethereum) {
